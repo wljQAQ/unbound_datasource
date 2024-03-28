@@ -1,6 +1,7 @@
-import { Typography, Modal, Flex, Card, Form, Input } from 'antd';
+import { Typography, Modal, Flex, Card, Form, Input, Row, Col } from 'antd';
 import { useState } from 'react';
 import './App.css';
+import { DATASOURCE_LIST } from './constant';
 
 type FieldType = {
   username?: string;
@@ -8,14 +9,23 @@ type FieldType = {
   remember?: string;
 };
 
+const formItemMap = {};
+
 function App() {
   const [open, setOpen] = useState(false);
   const [form] = Form.useForm();
-
+  let a = 1;
   async function onOk() {
     const state = await form.validateFields();
     console.log(state);
   }
+
+  function openModal() {
+    a = Date.now();
+    setOpen(true);
+  }
+
+  const Component = Input;
 
   return (
     <>
@@ -24,11 +34,27 @@ function App() {
           数据源
         </Typography.Title>
 
-        <Flex wrap="wrap" gap="large" justify="center">
-          <Card hoverable className="w-200px" title="PostgreSQL" size="small" onClick={() => setOpen(true)}>
-            从撒大苏打
-          </Card>
-        </Flex>
+        <Row className="max-w-900px mt-10  mx-auto! px-2" gutter={[24, 16]}>
+          {DATASOURCE_LIST.db.map(i => {
+            return (
+              <Col xs={12} md={8}>
+                <Card hoverable title={i.title} size="small" onClick={openModal}>
+                  {i.desc}
+                </Card>
+              </Col>
+            );
+          })}
+        </Row>
+
+        {/* <Flex wrap="wrap" gap="large" justify="center">
+          {DATASOURCE_LIST.db.map(i => {
+            return (
+              <Card hoverable className="w-200px" title="PostgreSQL" size="small" onClick={() => setOpen(true)}>
+                从撒大苏打
+              </Card>
+            );
+          })}
+        </Flex> */}
 
         <Modal title="连接PostgreSQL" open={open} onCancel={() => setOpen(false)} onOk={onOk}>
           <Form
@@ -40,13 +66,15 @@ function App() {
             initialValues={{ remember: true }}
             autoComplete="off"
           >
+            {a}
+
             <Form.Item<FieldType> label="主机" name="username" rules={[{ required: true, message: 'Please input your username!' }]}>
-              <Input />
+              <Component />
             </Form.Item>
 
-            <Form.Item<FieldType> label="Password" name="password" rules={[{ required: true, message: 'Please input your password!' }]}>
+            {/* <Form.Item<FieldType> label="Password" name="password" rules={[{ required: true, message: 'Please input your password!' }]}>
               <Input.Password />
-            </Form.Item>
+            </Form.Item> */}
           </Form>
         </Modal>
       </div>

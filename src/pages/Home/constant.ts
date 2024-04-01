@@ -21,7 +21,7 @@ export const DATASOURCE_LIST = {
       title: 'PostgresSQL',
       desc: '关系型数据库',
       form: {
-        initialValues: { host: 'localhost', port: 5432, database: 'postgres', user: 'postgres', password: '123456' },
+        initialValues: { host: 'localhost', port: 5432, database: 'postgres', username: 'postgres', password: '123456' },
         items: [
           {
             type: 'Input',
@@ -52,7 +52,7 @@ export const DATASOURCE_LIST = {
           },
           {
             type: 'Input',
-            name: 'user',
+            name: 'username',
             label: 'User',
             rules: [{ required: true, message: '请输入用户名!' }],
             props: {

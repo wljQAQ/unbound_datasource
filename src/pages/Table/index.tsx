@@ -14,7 +14,6 @@ export default function Table() {
   } = theme.useToken();
 
   const isRowSelectable = useCallback(rowNode => {
-    console.log(rowNode.data, rowNode, rowNode.key);
     return !rowNode.data?.add;
   }, []);
 

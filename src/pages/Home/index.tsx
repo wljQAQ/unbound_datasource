@@ -1,6 +1,7 @@
 import { Typography, Modal, Checkbox, Card, Form, Input, Row, Col } from 'antd';
 import { useState } from 'react';
 import { DATASOURCE_LIST, DatasourceItem } from './constant';
+import { useRequest } from 'ahooks';
 
 const FormComMap = { Input, Checkbox, Password: Input.Password };
 
@@ -12,6 +13,18 @@ function Home() {
   async function onOk() {
     const state = await form.validateFields();
     console.log(state);
+
+    fetch('/api/v1/datasource/connectDB', {
+      method: 'POST',
+      body: JSON.stringify(state)
+    })
+      .then(async res => {
+        const body = await res.json();
+        console.log(res, 'res', body);
+      })
+      .catch(err => {
+        console.log(err, 'err');
+      });
   }
 
   function openModal(item: DatasourceItem) {

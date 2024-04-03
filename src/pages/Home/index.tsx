@@ -15,7 +15,9 @@ function Home() {
     const state = await form.validateFields();
     console.log(state);
 
-    connectDB(state);
+    connectDB(state).then(res => {
+      console.log(res, 'res');
+    });
   }
 
   function openModal(item: DatasourceItem) {

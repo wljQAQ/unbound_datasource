@@ -50,11 +50,9 @@ export class Request {
     //全局请求拦截器
     this.axiosInstance.interceptors.request.use(
       config => {
-        console.log('全局请求成功拦截');
         return config;
       },
       error => {
-        console.log('全局请求错误拦截');
         return Promise.reject(error);
       }
     );
@@ -62,11 +60,14 @@ export class Request {
     //全局响应拦截器
     this.axiosInstance.interceptors.response.use(
       response => {
-        console.log('全局响应成功拦截');
+        if (response.status === 200) {
+          return response.data;
+        } else {
+          Promise.reject(`请求失败 status:${response.status} statusText=${response.statusText}`);
+        }
         return response;
       },
       (error: AxiosError) => {
-        console.log('全局响应错误拦截');
         if (error && error.response) {
           switch (error.response.status) {
             case 400:
@@ -121,41 +122,15 @@ export class Request {
 
   get<T = object>(url: string, params?: T, config: AxiosRequestConfig = {}): Promise<Result<T>> {
     config.params = params;
-    return new Promise((resolve, reject) => {
-      this.axiosInstance
-        .get(url, config)
-        .then(res => {
-          if (res.status === 200) {
-            resolve(res.data);
-          } else {
-            reject(`GET请求失败 信息：status=${res.status} statusText=${res.statusText}`);
-          }
-        })
-        .catch(err => {
-          reject(err);
-        });
-    });
+    return this.axiosInstance.get(url, config);
   }
 
   post<T = object>(url: string, params?: T, config: AxiosRequestConfig = {}): Promise<Result<T>> {
-    return new Promise((resolve, reject) => {
-      this.axiosInstance
-        .post(url, params, config)
-        .then(res => {
-          if (res.status === 200) {
-            resolve(res.data);
-          } else {
-            reject(`POST请求失败 信息：status=${res.status} statusText=${res.statusText}`);
-          }
-        })
-        .catch(err => {
-          reject(err);
-        });
-    });
+    return this.axiosInstance.post(url, params, config);
   }
 }
 
 export const request = new Request({
-  baseURL: import.meta.env.REACT_APP_BASE_URL,
+  baseURL: import.meta.env.VITE_SERVER_BASE_URL,
   timeout: 15 * 1000
 });

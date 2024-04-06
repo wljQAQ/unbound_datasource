@@ -21,7 +21,7 @@ export const DATASOURCE_LIST = {
       title: 'PostgresSQL',
       desc: '关系型数据库',
       form: {
-        initialValues: { host: 'localhost', port: 5432, database: 'postgres', username: 'postgres', password: '123456' },
+        initialValues: { host: 'localhost', port: 5432, database: 'postgres', username: 'postgres', password: '123456', ssl: false },
         items: [
           {
             type: 'Input',
@@ -67,6 +67,11 @@ export const DATASOURCE_LIST = {
             props: {
               placeholder: '请输入密码'
             }
+          },
+          {
+            type: 'Switch',
+            name: 'ssl',
+            label: 'Ssl'
           }
         ]
       }

@@ -3,7 +3,8 @@ import type { AxiosRequestConfig, AxiosInstance, AxiosResponse, AxiosError, Inte
 
 interface Result<T> {
   code: number;
-  result: T;
+  msg: string;
+  data: T;
 }
 
 interface Interceptors {

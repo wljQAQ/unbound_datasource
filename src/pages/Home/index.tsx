@@ -1,23 +1,28 @@
-import { Typography, Modal, Checkbox, Card, Form, Input, Row, Col } from 'antd';
+import { Typography, Modal, Switch, Card, Form, Input, Row, Col, message } from 'antd';
 import { useState } from 'react';
 import { DATASOURCE_LIST, DatasourceItem } from './constant';
-import { useRequest } from 'ahooks';
 import { connectDB } from '@/http/api/db';
+import { useNavigate } from 'react-router-dom';
 
-const FormComMap = { Input, Checkbox, Password: Input.Password };
+const FormComMap = { Input, Switch, Password: Input.Password };
 
 function Home() {
   const [open, setOpen] = useState(false);
   const [dataForm, setDataForm] = useState<DatasourceItem>();
   const [form] = Form.useForm();
+  const [messageApi, contextHolder] = message.useMessage();
+  const navigate = useNavigate();
 
   async function onOk() {
     const state = await form.validateFields();
-    console.log(state);
+    const { code, msg } = await connectDB(state);
+    if (code) {
+      messageApi.error(msg);
+      return;
+    }
 
-    connectDB(state).then(res => {
-      console.log(res, 'res');
-    });
+    navigate('/table');
+    messageApi.success('连接成功');
   }
 
   function openModal(item: DatasourceItem) {
@@ -30,6 +35,7 @@ function Home() {
 
   return (
     <>
+      {contextHolder}
       <div className="w-full h-full p-20px">
         <Typography.Title level={3} className="text-center">
           数据源
@@ -47,7 +53,7 @@ function Home() {
           })}
         </Row>
 
-        <Modal title="连接PostgreSQL" open={open} onCancel={() => setOpen(false)} onOk={onOk}>
+        <Modal title="连接PostgreSQL" open={open} onCancel={() => setOpen(false)} onOk={onOk} okText="连接">
           <Form {...(dataForm?.form || {})} form={form} name="basic" labelCol={{ span: 5 }} wrapperCol={{ span: 19 }}>
             {dataForm?.form &&
               dataForm.form?.items.map(item => {

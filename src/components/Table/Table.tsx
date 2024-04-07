@@ -1,11 +1,11 @@
 import { TdHTMLAttributes, TableHTMLAttributes, HTMLAttributes, ThHTMLAttributes } from 'react';
 
 export const Cell = (props: TdHTMLAttributes<HTMLTableCellElement>) => {
-  return <td className="p-2 text-#4B4B4B" {...props}></td>;
+  return <td className=" text-#4B4B4B" {...props}></td>;
 };
 
 export const Row = (props: React.HTMLAttributes<HTMLTableRowElement>) => {
-  return <tr className=" table-border border-b" {...props}></tr>;
+  return <tr className=" table-border border-b hover:bg-#2196f318" {...props}></tr>;
 };
 
 export const Header = (props: HTMLAttributes<HTMLTableSectionElement>) => {

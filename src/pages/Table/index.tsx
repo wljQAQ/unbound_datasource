@@ -1,8 +1,8 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Layout, theme, Menu, Button, Checkbox } from 'antd';
+import { useState, useMemo, useEffect, memo } from 'react';
+import { Layout, theme, Menu, Button, Checkbox, Input } from 'antd';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 
-import { createColumnHelper, ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
+import { createColumnHelper, ColumnDef, flexRender, getCoreRowModel, useReactTable, CellContext } from '@tanstack/react-table';
 import { Table, Head, Header as TableHeader, Body, Cell, Row } from '@/components/Table';
 
 const { Header, Content, Sider } = Layout;
@@ -32,18 +32,10 @@ let defaultData: Person[] = [
     visits: 40,
     status: 'Single',
     progress: 80
-  },
-  {
-    firstName: 'joe',
-    lastName: 'dirte',
-    age: 45,
-    visits: 20,
-    status: 'Complicated',
-    progress: 10
   }
 ];
 
-// Give our default column cell renderer editing superpowers!
+// 默认列
 const defaultColumn: Partial<ColumnDef<Person>> = {
   cell: ({ getValue, row, column, table }) => {
     const initialValue = getValue();
@@ -70,12 +62,47 @@ const defaultColumn: Partial<ColumnDef<Person>> = {
         autoFocus
       />
     ) : (
-      <span onClick={toggleEditing}>{value}</span> // 显示文本并在点击时切换到编辑状态
+      <span onClick={toggleEditing}>{value}111</span> // 显示文本并在点击时切换到编辑状态
     );
     // return <input value={value as string} onChange={e => setValue(e.target.value)} onBlur={onBlur} />;
     return value;
   }
 };
+
+const CellEditor = memo((props: CellContext<Person, unknown>) => {
+  const { getValue, row, column, table, cell } = props;
+
+  const initialValue = getValue();
+  // We need to keep and update the state of the cell normally
+  const [value, setValue] = useState(initialValue);
+  const [isEditing, setIsEditing] = useState(false);
+  console.log('重新渲染', column.id, column, row, column.getSize(), cell.column.getSize());
+  // When the input is blurred, we'll call our table meta's updateData function
+  const onBlur = () => {
+    // table.options.meta?.updateData(index, id, value);
+  };
+
+  const toggleEditing = () => {
+    setIsEditing(edit => !edit); // 切换编辑状态
+  };
+  // If the initialValue is changed external, sync it up with our state
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  return isEditing ? (
+    <input
+      defaultValue={value as string}
+      onBlur={toggleEditing} // 比如你可以在输入框失焦时保存并退出编辑模式
+      autoFocus
+      style={{ width: column.getSize() + 'px' }}
+    />
+  ) : (
+    <div className="p-2" onClick={toggleEditing}>
+      {value}
+    </div>
+  );
+});
 
 export default function Tables() {
   const [collapsed, setCollapsed] = useState(false);
@@ -112,24 +139,33 @@ export default function Tables() {
       },
       {
         accessorKey: 'firstName',
+        cell: CellEditor,
         footer: props => props.column.id,
         meta: {
-          test: 1
+          test: 1,
+          props: {
+            onClick() {
+              console.log(111);
+            }
+          }
         }
       },
       {
         accessorKey: 'visits',
+        cell: CellEditor,
         header: () => <span>Visits</span>,
         footer: props => props.column.id
       },
       {
         accessorKey: 'status',
         header: 'Status',
+        cell: CellEditor,
         footer: props => props.column.id
       },
       {
         accessorKey: 'progress',
         header: 'Profile Progress',
+        cell: CellEditor,
         footer: props => props.column.id
       }
     ],
@@ -213,7 +249,9 @@ export default function Tables() {
                 {table.getRowModel().rows.map(row => (
                   <Row key={row.id}>
                     {row.getVisibleCells().map(cell => (
-                      <Cell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Cell>
+                      <Cell key={cell.id} {...(cell.column.columnDef.meta?.props || {})}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </Cell>
                     ))}
                   </Row>
                 ))}

@@ -1,7 +1,7 @@
 import { TdHTMLAttributes, TableHTMLAttributes, HTMLAttributes, ThHTMLAttributes } from 'react';
 
 export const Cell = (props: TdHTMLAttributes<HTMLTableCellElement>) => {
-  return <td className=" text-#4B4B4B" {...props}></td>;
+  return <td className=" text-#4B4B4B hover:table-outline z-2" {...props}></td>;
 };
 
 export const Row = (props: React.HTMLAttributes<HTMLTableRowElement>) => {

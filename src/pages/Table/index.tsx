@@ -35,40 +35,6 @@ let defaultData: Person[] = [
   }
 ];
 
-// 默认列
-const defaultColumn: Partial<ColumnDef<Person>> = {
-  cell: ({ getValue, row, column, table }) => {
-    const initialValue = getValue();
-    // We need to keep and update the state of the cell normally
-    const [value, setValue] = useState(initialValue);
-    const [isEditing, setIsEditing] = useState(false);
-    console.log(column, column.id);
-    // When the input is blurred, we'll call our table meta's updateData function
-    const onBlur = () => {
-      // table.options.meta?.updateData(index, id, value);
-    };
-
-    const toggleEditing = () => {
-      setIsEditing(edit => !edit); // 切换编辑状态
-    };
-    // If the initialValue is changed external, sync it up with our state
-    useEffect(() => {
-      setValue(initialValue);
-    }, [initialValue]);
-    return isEditing ? (
-      <input
-        defaultValue={value as string}
-        onBlur={toggleEditing} // 比如你可以在输入框失焦时保存并退出编辑模式
-        autoFocus
-      />
-    ) : (
-      <span onClick={toggleEditing}>{value}111</span> // 显示文本并在点击时切换到编辑状态
-    );
-    // return <input value={value as string} onChange={e => setValue(e.target.value)} onBlur={onBlur} />;
-    return value;
-  }
-};
-
 const CellEditor = memo((props: CellContext<Person, unknown>) => {
   const { getValue, row, column, table, cell } = props;
 
@@ -76,7 +42,8 @@ const CellEditor = memo((props: CellContext<Person, unknown>) => {
   // We need to keep and update the state of the cell normally
   const [value, setValue] = useState(initialValue);
   const [isEditing, setIsEditing] = useState(false);
-  console.log('重新渲染', column.id, column, row, column.getSize(), cell.column.getSize());
+  console.log(cell);
+  // console.log('重新渲染', column.id, column, row, column.getSize(), cell.column.getSize());
   // When the input is blurred, we'll call our table meta's updateData function
   const onBlur = () => {
     // table.options.meta?.updateData(index, id, value);
@@ -86,18 +53,19 @@ const CellEditor = memo((props: CellContext<Person, unknown>) => {
     setIsEditing(edit => !edit); // 切换编辑状态
   };
   // If the initialValue is changed external, sync it up with our state
-  useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
-
+  // useEffect(() => {
+  //   setValue(initialValue);
+  // }, [initialValue]);
   return isEditing ? (
+    // <div className="bg-red">{value}</div>
     <input
+      className="inline-block w-full px-2 h-37px border-rounded-0 border-none focus:table-outline"
       defaultValue={value as string}
       onBlur={toggleEditing} // 比如你可以在输入框失焦时保存并退出编辑模式
       autoFocus
-      style={{ width: column.getSize() + 'px' }}
     />
   ) : (
+    // <span>111</span>
     <div className="p-2" onClick={toggleEditing}>
       {value}
     </div>
@@ -106,12 +74,12 @@ const CellEditor = memo((props: CellContext<Person, unknown>) => {
 
 export default function Tables() {
   const [collapsed, setCollapsed] = useState(false);
-  const [editedCells, setEditedCells] = useState({});
 
   const columns = useMemo<ColumnDef<Person>[]>(
     () => [
       {
         id: 'select',
+        size: 20,
         header: ({ table }) => {
           return (
             <Checkbox
@@ -127,6 +95,7 @@ export default function Tables() {
           console.log(row);
           return (
             <Checkbox
+            className='px-2'
               {...{
                 checked: row.getIsSelected(),
                 disabled: !row.getCanSelect(),
@@ -139,8 +108,34 @@ export default function Tables() {
       },
       {
         accessorKey: 'firstName',
+        header: 'FirstName',
         cell: CellEditor,
-        footer: props => props.column.id,
+        meta: {
+          test: 1,
+          props: {
+            onClick() {
+              console.log(111);
+            }
+          }
+        }
+      },
+      {
+        accessorKey: 'lastName',
+        header: 'LastName',
+        cell: CellEditor,
+        meta: {
+          test: 1,
+          props: {
+            onClick() {
+              console.log(111);
+            }
+          }
+        }
+      },
+      {
+        accessorKey: 'age',
+        cell: CellEditor,
+        header: 'Age',
         meta: {
           test: 1,
           props: {
@@ -153,20 +148,17 @@ export default function Tables() {
       {
         accessorKey: 'visits',
         cell: CellEditor,
-        header: () => <span>Visits</span>,
-        footer: props => props.column.id
+        header: 'Visits'
       },
       {
         accessorKey: 'status',
         header: 'Status',
-        cell: CellEditor,
-        footer: props => props.column.id
+        cell: CellEditor
       },
       {
         accessorKey: 'progress',
         header: 'Profile Progress',
-        cell: CellEditor,
-        footer: props => props.column.id
+        cell: CellEditor
       }
     ],
     []
@@ -180,7 +172,6 @@ export default function Tables() {
   const table = useReactTable({
     data,
     columns,
-    defaultColumn,
     meta: {
       updateData: (index, id, value) => {
         console.log(index, id, value);
@@ -249,24 +240,13 @@ export default function Tables() {
                 {table.getRowModel().rows.map(row => (
                   <Row key={row.id}>
                     {row.getVisibleCells().map(cell => (
-                      <Cell key={cell.id} {...(cell.column.columnDef.meta?.props || {})}>
+                      <Cell key={cell.id} style={{ width: cell.column.getSize() + 'px' }} {...(cell.column.columnDef.meta?.props || {})}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </Cell>
                     ))}
                   </Row>
                 ))}
               </Body>
-              {/* <tfoot>
-                {table.getFooterGroups().map(footerGroup => (
-                  <Row key={footerGroup.id}>
-                    {footerGroup.headers.map(header => (
-                      <Head key={header.id}>
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.footer, header.getContext())}
-                      </Head>
-                    ))}
-                  </Row>
-                ))}
-              </tfoot> */}
             </Table>
           </Content>
         </Layout>

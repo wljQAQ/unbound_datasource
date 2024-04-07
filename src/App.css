@@ -37,3 +37,28 @@
 .read-the-docs {
   color: #888;
 }
+
+/* td {
+  font-family: Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.43;
+  letter-spacing: 0.01071em;
+  display: table-cell;
+  vertical-align: inherit;
+  border-bottom: 1px solid rgb(224, 224, 224);
+  text-align: left;
+  color: rgba(0, 0, 0, 0.87);
+  cursor: context-menu;
+  outline-offset: -1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  background-color: inherit;
+  background-image: inherit;
+  opacity: 1;
+  position: relative;
+  transition: padding 150ms ease-in-out 0s;
+  z-index: 0;
+  width: 100px;
+} */

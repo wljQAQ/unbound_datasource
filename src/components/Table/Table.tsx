@@ -1,5 +1,9 @@
 import { TdHTMLAttributes, TableHTMLAttributes, HTMLAttributes, ThHTMLAttributes } from 'react';
 
+import { useDrag } from 'react-dnd';
+
+import { Divider } from 'antd';
+
 export const Cell = (props: TdHTMLAttributes<HTMLTableCellElement>) => {
   return <td className=" text-#4B4B4B hover:table-outline z-2" {...props}></td>;
 };
@@ -9,11 +13,22 @@ export const Row = (props: React.HTMLAttributes<HTMLTableRowElement>) => {
 };
 
 export const Header = (props: HTMLAttributes<HTMLTableSectionElement>) => {
-  return <thead {...props}></thead>;
+  return <thead className="select-none" {...props}></thead>;
 };
 
 export const Head = (props: ThHTMLAttributes<HTMLTableCellElement>) => {
-  return <th className="text-left px-2 font-500 text-#71717A h-10 bg-#F5F5F5" {...props}></th>;
+  const [ctx, drag] = useDrag(() => ({
+    type: 'test',
+    item: 'test',
+    end(item) {
+      console.log(item);
+    },
+    collect: monitor => ({
+      isDragging: !!monitor.isDragging()
+    })
+  }));
+
+  return <th ref={drag} className="relative text-left px-2 font-500 text-#71717A h-10 bg-#F5F5F5" {...props}></th>;
 };
 
 export const Body = (props: HTMLAttributes<HTMLTableSectionElement>) => {

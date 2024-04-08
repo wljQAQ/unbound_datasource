@@ -1,11 +1,22 @@
 import { useState, useMemo, useEffect, memo } from 'react';
-import { Layout, theme, Menu, Button, Checkbox, Input } from 'antd';
-import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { Layout, theme, Menu, Button, Checkbox, Dropdown, message, Divider } from 'antd';
+import type { MenuProps } from 'antd';
+import { MenuFoldOutlined, MenuUnfoldOutlined, CopyOutlined } from '@ant-design/icons';
 
-import { createColumnHelper, ColumnDef, flexRender, getCoreRowModel, useReactTable, CellContext } from '@tanstack/react-table';
+import { ColumnDef, flexRender, getCoreRowModel, useReactTable, CellContext } from '@tanstack/react-table';
 import { Table, Head, Header as TableHeader, Body, Cell, Row } from '@/components/Table';
 
+import { useDrag } from 'react-dnd';
+
 const { Header, Content, Sider } = Layout;
+
+const items: MenuProps['items'] = [
+  {
+    label: '复制',
+    key: 'copy',
+    icon: <CopyOutlined />
+  }
+];
 
 type Person = {
   firstName: string;
@@ -42,8 +53,7 @@ const CellEditor = memo((props: CellContext<Person, unknown>) => {
   // We need to keep and update the state of the cell normally
   const [value, setValue] = useState(initialValue);
   const [isEditing, setIsEditing] = useState(false);
-  console.log(cell);
-  // console.log('重新渲染', column.id, column, row, column.getSize(), cell.column.getSize());
+  console.log('重新渲染', table.options.meta);
   // When the input is blurred, we'll call our table meta's updateData function
   const onBlur = () => {
     // table.options.meta?.updateData(index, id, value);
@@ -74,6 +84,12 @@ const CellEditor = memo((props: CellContext<Person, unknown>) => {
 
 export default function Tables() {
   const [collapsed, setCollapsed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [tableState, setTableState] = useState({
+    currentCells: []
+  });
+
+  const [messageApi, contextHolder] = message.useMessage();
 
   const columns = useMemo<ColumnDef<Person>[]>(
     () => [
@@ -92,10 +108,9 @@ export default function Tables() {
           );
         },
         cell: ({ row }) => {
-          console.log(row);
           return (
             <Checkbox
-            className='px-2'
+              className="px-2"
               {...{
                 checked: row.getIsSelected(),
                 disabled: !row.getCanSelect(),
@@ -169,19 +184,70 @@ export default function Tables() {
 
   const [data, _setData] = useState(() => [...defaultData]);
 
+  // const [ctx, drag] = useDrag(() => ({
+  //   type: 'test',
+  //   item: 'test',
+  //   end(item) {
+  //     console.log(item);
+  //   },
+  //   collect: monitor => ({
+  //     isDragging: !!monitor.isDragging()
+  //   })
+  // }));
+
   const table = useReactTable({
     data,
     columns,
+    defaultColumn: {
+      minSize: 100,
+      maxSize: 800
+    },
+    columnResizeMode: 'onChange', // 列宽调整模式 onChange  onEnd
+    columnResizeDirection: 'ltr', // 列宽调整方向 ltr rtl
     meta: {
       updateData: (index, id, value) => {
         console.log(index, id, value);
-      }
+      },
+      tableState
     },
     getCoreRowModel: getCoreRowModel()
   });
 
+  function onContextMenu(event: React.MouseEvent<HTMLDivElement>) {
+    const dom = event.target as HTMLElement;
+    if (!dom) return;
+    const closestTableNode = dom.closest('[data-table]') as HTMLElement;
+    if (!closestTableNode) {
+      setMenuOpen(false);
+      return;
+    }
+    const [type, id] = closestTableNode.dataset.table!.split('-');
+    console.log(closestTableNode.dataset, id, type);
+
+    setTableState(prev => {
+      return {
+        ...prev,
+        currentCells: [id]
+      };
+    });
+    //获取当前的id
+    event.preventDefault();
+    setMenuOpen(true);
+    function hiddenMenu() {
+      setMenuOpen(false);
+      window.removeEventListener('click', hiddenMenu);
+    }
+    window.addEventListener('click', hiddenMenu);
+  }
+
+  const onClick: MenuProps['onClick'] = ({ key }) => {
+    console.log(tableState, key);
+    messageApi.success('你点击了' + key);
+  };
+
   return (
     <>
+      {contextHolder}
       <Layout className="h-full">
         <Sider theme="light" trigger={null} collapsible collapsed={collapsed}>
           <Menu
@@ -224,30 +290,45 @@ export default function Tables() {
               borderRadius: borderRadiusLG
             }}
           >
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map(headerGroup => (
-                  <Row key={headerGroup.id}>
-                    {headerGroup.headers.map(header => (
-                      <Head key={header.id}>
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                      </Head>
+            <Dropdown open={menuOpen} menu={{ items, onClick }} trigger={['contextMenu']}>
+              <div className="overflow-x-auto">
+                <Table onContextMenu={onContextMenu} style={{ width: table.getCenterTotalSize() }}>
+                  <TableHeader>
+                    {table.getHeaderGroups().map(headerGroup => (
+                      <Row key={headerGroup.id}>
+                        {headerGroup.headers.map(header => (
+                          <Head key={header.id} style={{ width: header.getSize() }}>
+                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+
+                            <Divider
+                              onMouseDown={header.getResizeHandler()}
+                              className="absolute right-0px top-50% translate-y--50% cursor-ew-resize"
+                              type="vertical"
+                            />
+                          </Head>
+                        ))}
+                      </Row>
                     ))}
-                  </Row>
-                ))}
-              </TableHeader>
-              <Body>
-                {table.getRowModel().rows.map(row => (
-                  <Row key={row.id}>
-                    {row.getVisibleCells().map(cell => (
-                      <Cell key={cell.id} style={{ width: cell.column.getSize() + 'px' }} {...(cell.column.columnDef.meta?.props || {})}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </Cell>
+                  </TableHeader>
+                  <Body>
+                    {table.getRowModel().rows.map(row => (
+                      <Row key={row.id}>
+                        {row.getVisibleCells().map(cell => (
+                          <Cell
+                            data-table={`cell-${cell.id}`}
+                            key={cell.id}
+                            style={{ width: cell.column.getSize() }}
+                            {...(cell.column.columnDef.meta?.props || {})}
+                          >
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </Cell>
+                        ))}
+                      </Row>
                     ))}
-                  </Row>
-                ))}
-              </Body>
-            </Table>
+                  </Body>
+                </Table>
+              </div>
+            </Dropdown>
           </Content>
         </Layout>
       </Layout>

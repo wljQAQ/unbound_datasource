@@ -1,6 +1,18 @@
-import { TdHTMLAttributes, TableHTMLAttributes, HTMLAttributes, ThHTMLAttributes } from 'react';
+import { TdHTMLAttributes, TableHTMLAttributes, HTMLAttributes, ThHTMLAttributes, CSSProperties } from 'react';
+import type { Header as HeaderProps } from '@tanstack/react-table';
+import { flexRender } from '@tanstack/react-table';
 
-import { useDrag } from 'react-dnd';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+type Person = {
+  firstName: string;
+  lastName: string;
+  age: number;
+  visits: number;
+  status: string;
+  progress: number;
+};
 
 import { Divider } from 'antd';
 
@@ -16,19 +28,46 @@ export const Header = (props: HTMLAttributes<HTMLTableSectionElement>) => {
   return <thead className="select-none" {...props}></thead>;
 };
 
-export const Head = (props: ThHTMLAttributes<HTMLTableCellElement>) => {
-  const [ctx, drag] = useDrag(() => ({
-    type: 'test',
-    item: 'test',
-    end(item) {
-      console.log(item);
-    },
-    collect: monitor => ({
-      isDragging: !!monitor.isDragging()
-    })
-  }));
+// export const Head = (props: ThHTMLAttributes<HTMLTableCellElement>) => {
+export const Head = ({ header }: { header: HeaderProps<Person, unknown> }) => {
+  const { attributes, isDragging, listeners, setNodeRef, transform } = useSortable({
+    id: header.column.id
+  });
+  const style: CSSProperties = {
+    opacity: isDragging ? 0.8 : 1,
+    position: 'relative',
+    transform: CSS.Translate.toString(transform), // translate instead of transform to avoid squishing
+    transition: 'width transform 0.3s ease-in-out',
+    whiteSpace: 'nowrap',
+    width: header.column.getSize(),
+    zIndex: isDragging ? 1 : 0
+  };
 
-  return <th ref={drag} className="relative text-left px-2 font-500 text-#71717A h-10 bg-#F5F5F5" {...props}></th>;
+  const test = header.getResizeHandler();
+  function handleResize(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
+    e.preventDefault();
+    e.stopPropagation();
+    test(e);
+  }
+
+  return (
+    <th
+      ref={setNodeRef}
+      className="relative text-left px-2 font-500 text-#71717A h-10 bg-#F5F5F5"
+      style={style}
+      colSpan={header.colSpan}
+      {...attributes}
+      {...listeners}
+    >
+      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+
+      <Divider
+        onMouseDown={handleResize}
+        className="absolute right-0px top-50% translate-y--50% z-4 border-2 border-#D9D9DB cursor-ew-resize"
+        type="vertical"
+      />
+    </th>
+  );
 };
 
 export const Body = (props: HTMLAttributes<HTMLTableSectionElement>) => {

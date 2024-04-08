@@ -9,11 +9,9 @@ import './App.css';
 function App() {
   return (
     <>
-      <DndProvider backend={HTML5Backend}>
-        <ConfigProvider locale={zhCN}>
-          <RouterProvider router={router}></RouterProvider>
-        </ConfigProvider>
-      </DndProvider>
+      <ConfigProvider locale={zhCN}>
+        <RouterProvider router={router}></RouterProvider>
+      </ConfigProvider>
     </>
   );
 }

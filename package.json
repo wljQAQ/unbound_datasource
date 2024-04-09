@@ -16,6 +16,7 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@tanstack/react-table": "^8.15.3",
+    "@tanstack/react-virtual": "^3.2.0",
     "@types/node": "^20.12.2",
     "ag-grid-community": "^31.2.0",
     "ag-grid-react": "^31.2.0",

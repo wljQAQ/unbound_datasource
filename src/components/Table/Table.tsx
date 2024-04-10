@@ -1,5 +1,15 @@
-import { TdHTMLAttributes, TableHTMLAttributes, HTMLAttributes, ThHTMLAttributes, CSSProperties, forwardRef } from 'react';
-import type { Header as HeaderProps } from '@tanstack/react-table';
+import {
+  TdHTMLAttributes,
+  TableHTMLAttributes,
+  useState,
+  useEffect,
+  HTMLAttributes,
+  ThHTMLAttributes,
+  CSSProperties,
+  forwardRef,
+  useMemo
+} from 'react';
+import type { Header as HeaderProps, Column as ColumnProps, Table as TableProps } from '@tanstack/react-table';
 import { flexRender } from '@tanstack/react-table';
 
 import { useSortable } from '@dnd-kit/sortable';
@@ -29,7 +39,7 @@ export const Header = (props: HTMLAttributes<HTMLTableSectionElement>) => {
 };
 
 // export const Head = (props: ThHTMLAttributes<HTMLTableCellElement>) => {
-export const Head = ({ header }: { header: HeaderProps<Person, unknown> }) => {
+export const Head = ({ header, table }: { header: HeaderProps<Person, unknown>; table: TableProps<any> }) => {
   const { attributes, isDragging, listeners, setNodeRef, transform } = useSortable({
     id: header.id
   });
@@ -58,7 +68,7 @@ export const Head = ({ header }: { header: HeaderProps<Person, unknown> }) => {
   return (
     <th
       ref={setNodeRef}
-      className="relative flex items-center text-left px-2 font-500 text-#71717A h-10 bg-#F5F5F5"
+      className="relative flex flex-wrap select-none  cursor-pointer items-center text-left px-2 font-500 text-#71717A h-10 bg-#F5F5F5"
       style={style}
       colSpan={header.colSpan}
       onClick={handleClick}
@@ -70,6 +80,11 @@ export const Head = ({ header }: { header: HeaderProps<Person, unknown> }) => {
         asc: ' 🔼',
         desc: ' 🔽'
       }[header.column.getIsSorted() as string] ?? null}
+      {header.column.getCanFilter() ? (
+        <div className="w-full" onClick={e => e.stopPropagation()}>
+          <Filter column={header.column} table={table} />
+        </div>
+      ) : null}
       <Divider
         onMouseDown={handleResize}
         className="absolute right-0px top-50% translate-y--50% z-4 border-2 border-#D9D9DB cursor-ew-resize"
@@ -86,3 +101,85 @@ export const Body = (props: HTMLAttributes<HTMLTableSectionElement>) => {
 export const Table = (props: TableHTMLAttributes<HTMLTableElement>) => {
   return <table className="w-full text-sm border-collapse table-border border" {...props}></table>;
 };
+
+function Filter({ column, table }: { column: ColumnProps<any, unknown>; table: TableProps<any> }) {
+  const firstValue = table.getPreFilteredRowModel().flatRows[0]?.getValue(column.id);
+
+  const columnFilterValue = column.getFilterValue();
+
+  const sortedUniqueValues = useMemo(
+    () => (typeof firstValue === 'number' ? [] : Array.from(column.getFacetedUniqueValues().keys()).sort()),
+    [column.getFacetedUniqueValues()]
+  );
+
+  return typeof firstValue === 'number' ? (
+    <div>
+      <div className="flex space-x-2">
+        <DebouncedInput
+          type="number"
+          min={Number(column.getFacetedMinMaxValues()?.[0] ?? '')}
+          max={Number(column.getFacetedMinMaxValues()?.[1] ?? '')}
+          value={(columnFilterValue as [number, number])?.[0] ?? ''}
+          onChange={value => column.setFilterValue((old: [number, number]) => [value, old?.[1]])}
+          placeholder={`Min ${column.getFacetedMinMaxValues()?.[0] ? `(${column.getFacetedMinMaxValues()?.[0]})` : ''}`}
+          className="w-24 border shadow rounded"
+        />
+        <DebouncedInput
+          type="number"
+          min={Number(column.getFacetedMinMaxValues()?.[0] ?? '')}
+          max={Number(column.getFacetedMinMaxValues()?.[1] ?? '')}
+          value={(columnFilterValue as [number, number])?.[1] ?? ''}
+          onChange={value => column.setFilterValue((old: [number, number]) => [old?.[0], value])}
+          placeholder={`Max ${column.getFacetedMinMaxValues()?.[1] ? `(${column.getFacetedMinMaxValues()?.[1]})` : ''}`}
+          className="w-24 border shadow rounded"
+        />
+      </div>
+      <div className="h-1" />
+    </div>
+  ) : (
+    <>
+      <datalist id={column.id + 'list'}>
+        {sortedUniqueValues.slice(0, 5000).map((value: any) => (
+          <option value={value} key={value} />
+        ))}
+      </datalist>
+      <DebouncedInput
+        type="text"
+        value={(columnFilterValue ?? '') as string}
+        onChange={value => column.setFilterValue(value)}
+        placeholder={`Search... (${column.getFacetedUniqueValues().size})`}
+        className="w-36 border shadow rounded"
+        list={column.id + 'list'}
+      />
+      <div className="h-1" />
+    </>
+  );
+}
+
+// A debounced input react component
+function DebouncedInput({
+  value: initialValue,
+  onChange,
+  debounce = 500,
+  ...props
+}: {
+  value: string | number;
+  onChange: (value: string | number) => void;
+  debounce?: number;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'>) {
+  const [value, setValue] = useState(initialValue);
+
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      onChange(value);
+    }, debounce);
+
+    return () => clearTimeout(timeout);
+  }, [value]);
+
+  return <input {...props} value={value} onChange={e => setValue(e.target.value)} />;
+}

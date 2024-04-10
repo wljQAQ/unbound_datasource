@@ -9,9 +9,16 @@ import {
   getCoreRowModel,
   useReactTable,
   CellContext,
+  FilterFn,
   getPaginationRowModel,
   getSortedRowModel,
   PaginationState,
+  getFacetedMinMaxValues,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  sortingFns,
+  type ColumnFiltersState,
   type Header as HeaderProps,
   type Row as RowProps,
   type SortingStateProps
@@ -92,6 +99,9 @@ export default function Tables() {
     currentCells: []
   });
 
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10
@@ -122,10 +132,18 @@ export default function Tables() {
     // },
     state: {
       columnOrder,
-      sorting
+      sorting,
+      columnFilters,
+      globalFilter
       // pagination
     },
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     onColumnOrderChange: setColumnOrder,
+    getFilteredRowModel: getFilteredRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
+    getFacetedMinMaxValues: getFacetedMinMaxValues(),
     // getPaginationRowModel: getPaginationRowModel(),
     // onPaginationChange: setPagination,
     columnResizeMode: 'onChange', // 列宽调整模式 onChange  onEnd
@@ -183,9 +201,21 @@ export default function Tables() {
   }
 
   //使拖拽延迟 https://github.com/clauderic/dnd-kit/issues/329#issuecomment-860054645
-  // const 
+  // const
 
-  const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}));
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 10
+      }
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        distance: 10
+      }
+    }),
+    useSensor(KeyboardSensor, {})
+  );
 
   function onContextMenu(event: React.MouseEvent<HTMLDivElement>) {
     const dom = event.target as HTMLElement;
@@ -284,7 +314,15 @@ export default function Tables() {
                           <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
                             {virtualColumns.map(vc => {
                               const header = headerGroup.headers[vc.index];
-                              return <Head key={header.id} header={header}></Head>;
+                              return (
+                                <Head key={header.id} header={header} table={table}>
+                                  {/* {header.column.getCanFilter() ? (
+                                    <div>
+                                      <Filter column={header.column} table={table} />
+                                    </div>
+                                  ) : null} */}
+                                </Head>
+                              );
                             })}
                           </SortableContext>
                           {virtualPaddingRight ? (

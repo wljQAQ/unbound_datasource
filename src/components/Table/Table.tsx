@@ -21,7 +21,6 @@ export const Cell = (props: TdHTMLAttributes<HTMLTableCellElement>) => {
 };
 
 export const Row = forwardRef((props: React.HTMLAttributes<HTMLTableRowElement>, ref) => {
-  console.log(props);
   return <tr ref={ref} className=" flex table-border border-b hover:bg-#2196f318 w-full" {...props}></tr>;
 });
 
@@ -37,19 +36,23 @@ export const Head = ({ header }: { header: HeaderProps<Person, unknown> }) => {
 
   const style: CSSProperties = {
     opacity: isDragging ? 0.8 : 1,
-    position: 'relative',
     transform: CSS.Translate.toString(transform), // translate instead of transform to avoid squishing
     transition: 'width transform 0.3s ease-in-out',
     whiteSpace: 'nowrap',
     width: header.getSize(),
     zIndex: isDragging ? 1 : 0
   };
-
   const test = header.getResizeHandler();
+  const sort = header.column.getToggleSortingHandler();
   function handleResize(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     e.preventDefault();
     e.stopPropagation();
     test(e);
+  }
+  console.log(listeners, attributes);
+  function handleClick(e) {
+    console.log(sort);
+    sort(e);
   }
 
   return (
@@ -58,11 +61,15 @@ export const Head = ({ header }: { header: HeaderProps<Person, unknown> }) => {
       className="relative flex items-center text-left px-2 font-500 text-#71717A h-10 bg-#F5F5F5"
       style={style}
       colSpan={header.colSpan}
+      onClick={handleClick}
       {...attributes}
       {...listeners}
     >
       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-
+      {{
+        asc: ' 🔼',
+        desc: ' 🔽'
+      }[header.column.getIsSorted() as string] ?? null}
       <Divider
         onMouseDown={handleResize}
         className="absolute right-0px top-50% translate-y--50% z-4 border-2 border-#D9D9DB cursor-ew-resize"
@@ -77,7 +84,5 @@ export const Body = (props: HTMLAttributes<HTMLTableSectionElement>) => {
 };
 
 export const Table = (props: TableHTMLAttributes<HTMLTableElement>) => {
-  return (
-      <table className="w-full text-sm border-collapse table-border border" {...props}></table>
-  );
+  return <table className="w-full text-sm border-collapse table-border border" {...props}></table>;
 };

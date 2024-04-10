@@ -10,9 +10,11 @@ import {
   useReactTable,
   CellContext,
   getPaginationRowModel,
+  getSortedRowModel,
   PaginationState,
-  Header as HeaderProps,
-  Row as RowProps
+  type Header as HeaderProps,
+  type Row as RowProps,
+  type SortingStateProps
 } from '@tanstack/react-table';
 import { Table, Head, Header as TableHeader, Body, Cell, Row } from '@/components/Table';
 
@@ -80,11 +82,12 @@ const CellEditor = memo((props: CellContext<Person, unknown>) => {
 });
 
 export default function Tables() {
-  const columns = useMemo<ColumnDef<Person>[]>(() => makeColumns(100), []);
+  const columns = useMemo<ColumnDef<Person>[]>(() => makeColumns(22, CellEditor), []);
   const [data, _setData] = useState(() => makeData(1_000, columns));
 
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sorting, setSorting] = useState<SortingStateProps>([]);
   const [tableState, setTableState] = useState({
     currentCells: []
   });
@@ -94,123 +97,6 @@ export default function Tables() {
     pageSize: 10
   });
   const [messageApi, contextHolder] = message.useMessage();
-  // const columns = useMemo<ColumnDef<Person>[]>(
-  //   () => [
-  //     {
-  //       id: 'select',
-  //       size: 20,
-  //       header: ({ table }) => {
-  //         return (
-  //           <Checkbox
-  //             {...{
-  //               checked: table.getIsAllRowsSelected(),
-  //               indeterminate: table.getIsSomeRowsSelected(),
-  //               onChange: table.getToggleAllRowsSelectedHandler()
-  //             }}
-  //           />
-  //         );
-  //       },
-  //       cell: ({ row }) => {
-  //         return (
-  //           <Checkbox
-  //             className="px-2"
-  //             {...{
-  //               checked: row.getIsSelected(),
-  //               disabled: !row.getCanSelect(),
-  //               indeterminate: row.getIsSomeSelected(),
-  //               onChange: row.getToggleSelectedHandler()
-  //             }}
-  //           />
-  //         );
-  //       }
-  //     },
-  //     {
-  //       id: 'firstName',
-  //       accessorKey: 'firstName',
-  //       header: 'FirstName',
-  //       cell: CellEditor,
-  //       meta: {
-  //         test: 1,
-  //         props: {
-  //           onClick() {
-  //             console.log(111);
-  //           }
-  //         }
-  //       }
-  //     },
-  //     {
-  //       id: 'lastName',
-  //       accessorKey: 'lastName',
-  //       header: 'LastName',
-  //       cell: CellEditor,
-  //       meta: {
-  //         test: 1,
-  //         props: {
-  //           onClick() {
-  //             console.log(111);
-  //           }
-  //         }
-  //       }
-  //     },
-  //     {
-  //       id: 'age',
-  //       accessorKey: 'age',
-  //       cell: CellEditor,
-  //       header: 'Age',
-  //       meta: {
-  //         test: 1,
-  //         props: {
-  //           onClick() {
-  //             console.log(111);
-  //           }
-  //         }
-  //       }
-  //     },
-  //     {
-  //       id: 'visits',
-  //       accessorKey: 'visits',
-  //       cell: CellEditor,
-  //       header: 'Visits'
-  //     },
-  //     {
-  //       id: 'status',
-  //       accessorKey: 'status',
-  //       header: 'Status',
-  //       cell: CellEditor
-  //     },
-  //     {
-  //       id: 'progress',
-  //       accessorKey: 'progress',
-  //       header: 'Profile Progress',
-  //       cell: CellEditor
-  //     },
-  //     {
-  //       id: 'progress2',
-  //       accessorKey: 'progress2',
-  //       header: 'Profile Progress',
-  //       cell: CellEditor
-  //     },
-  //     {
-  //       id: 'progress3',
-  //       accessorKey: 'progress3',
-  //       header: 'Profile Progress',
-  //       cell: CellEditor
-  //     },
-  //     {
-  //       id: 'progress4',
-  //       accessorKey: 'progress4',
-  //       header: 'Profile Progress',
-  //       cell: CellEditor
-  //     },
-  //     {
-  //       id: 'progress5',
-  //       accessorKey: 'progress5',
-  //       header: 'Profile Progress',
-  //       cell: CellEditor
-  //     }
-  //   ],
-  //   []
-  // );
   const {
     token: { colorBgContainer, borderRadiusLG }
   } = theme.useToken();
@@ -235,28 +121,30 @@ export default function Tables() {
     //   maxSize: 800
     // },
     state: {
-      columnOrder
+      columnOrder,
+      sorting
       // pagination
     },
-    // onColumnOrderChange: setColumnOrder,
+    onColumnOrderChange: setColumnOrder,
     // getPaginationRowModel: getPaginationRowModel(),
     // onPaginationChange: setPagination,
-    // columnResizeMode: 'onChange', // 列宽调整模式 onChange  onEnd
-    // columnResizeDirection: 'ltr', // 列宽调整方向 ltr rtl
+    columnResizeMode: 'onChange', // 列宽调整模式 onChange  onEnd
+    columnResizeDirection: 'ltr', // 列宽调整方向 ltr rtl
     meta: {
       updateData: (index, id, value) => {
         console.log(index, id, value);
       },
       tableState
     },
-    getCoreRowModel: getCoreRowModel()
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    debugTable: true
   });
 
   const { rows } = table.getRowModel();
 
   const visibleColumns = table.getVisibleLeafColumns();
-
-  console.log(visibleColumns);
 
   //we are using a slightly different virtualization strategy for columns (compared to virtual rows) in order to support dynamic row heights
   const columnVirtualizer = useVirtualizer({
@@ -285,7 +173,6 @@ export default function Tables() {
 
   const virtualColumns = columnVirtualizer.getVirtualItems();
   const virtualRows = rowVirtualizer.getVirtualItems();
-  console.log(virtualColumns);
   //different virtualization strategy for columns - instead of absolute and translateY, we add empty columns to the left and right
   let virtualPaddingLeft: number | undefined;
   let virtualPaddingRight: number | undefined;
@@ -295,7 +182,9 @@ export default function Tables() {
     virtualPaddingRight = columnVirtualizer.getTotalSize() - (virtualColumns[virtualColumns.length - 1]?.end ?? 0);
   }
 
-  console.log(virtualPaddingRight, virtualPaddingLeft);
+  //使拖拽延迟 https://github.com/clauderic/dnd-kit/issues/329#issuecomment-860054645
+  // const 
+
   const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}));
 
   function onContextMenu(event: React.MouseEvent<HTMLDivElement>) {
@@ -307,7 +196,6 @@ export default function Tables() {
       return;
     }
     const [type, id] = closestTableNode.dataset.table!.split('-');
-    console.log(closestTableNode.dataset, id, type);
 
     setTableState(prev => {
       return {
@@ -336,7 +224,7 @@ export default function Tables() {
     table.setPageIndex(page - 1);
     table.setPageSize(pageSize);
   }
-
+  console.log('table renderer');
   return (
     <>
       {contextHolder}
@@ -393,12 +281,12 @@ export default function Tables() {
                             //fake empty column to the left for virtualization scroll padding
                             <th style={{ display: 'flex', width: virtualPaddingLeft }} />
                           ) : null}
-                          {/* <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}> */}
+                          <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
                             {virtualColumns.map(vc => {
                               const header = headerGroup.headers[vc.index];
                               return <Head key={header.id} header={header}></Head>;
                             })}
-                          {/* </SortableContext> */}
+                          </SortableContext>
                           {virtualPaddingRight ? (
                             //fake empty column to the right for virtualization scroll padding
                             <th style={{ display: 'flex', width: virtualPaddingRight }} />
